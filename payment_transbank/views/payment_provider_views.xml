@@ -7,8 +7,14 @@
         <field name="arch" type="xml">
             <xpath expr="//group[@name='provider_credentials']" position="inside">
                 <group invisible="code != 'transbank'">
+                    <separator string="Webpay Plus Credentials" colspan="2"/>
                     <field name="transbank_commerce_code" required="code == 'transbank' and state == 'enabled'"/>
                     <field name="transbank_api_key" password="True" required="code == 'transbank' and state == 'enabled'"/>
+                    
+                    <separator string="Oneclick Mall Credentials" colspan="2"/>
+                    <field name="transbank_oneclick_commerce_code" required="code == 'transbank' and state == 'enabled'"/>
+                    <field name="transbank_oneclick_api_key" password="True" required="code == 'transbank' and state == 'enabled'"/>
+                    
                     <div colspan="2" class="alert alert-info" invisible="state != 'test'" role="status">
                         <strong>Credentials are not required when Test Mode is active.</strong>
                         <br/>

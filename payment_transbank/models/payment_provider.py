@@ -1,4 +1,4 @@
-from odoo import fields, models, _
+from odoo import fields, models
 
 class PaymentProvider(models.Model):
     _inherit = 'payment.provider'
@@ -6,16 +6,27 @@ class PaymentProvider(models.Model):
     code = fields.Selection(
         selection_add=[('transbank', 'Transbank')], ondelete={'transbank': 'set default'}
     )
+    
+    # Webpay Plus Credentials
     transbank_commerce_code = fields.Char(
-        string='Commerce Code',
-        required_if_provider='transbank',
-        help='The commerce code provided by Transbank'
+        string='Webpay Commerce Code',
+        help='The commerce code provided by Transbank for Webpay Plus'
     )
     transbank_api_key = fields.Char(
-        string='API Key',
-        required_if_provider='transbank',
+        string='Webpay API Key',
         groups='base.group_system',
-        help='The API Key provided by Transbank'
+        help='The API Key provided by Transbank for Webpay Plus'
+    )
+
+    # Oneclick Mall Credentials
+    transbank_oneclick_commerce_code = fields.Char(
+        string='Oneclick Commerce Code',
+        help='The commerce code provided by Transbank for Oneclick Mall'
+    )
+    transbank_oneclick_api_key = fields.Char(
+        string='Oneclick API Key',
+        groups='base.group_system',
+        help='The API Key provided by Transbank for Oneclick Mall'
     )
 
     def _get_supported_currencies(self):

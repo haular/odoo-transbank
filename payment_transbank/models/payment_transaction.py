@@ -6,7 +6,9 @@ from odoo import _, api, models
 from odoo.exceptions import ValidationError
 
 from transbank.error.transbank_error import TransbankError
-from transbank.webpay.webpay_plus.transaction import Transaction
+from transbank.webpay.webpay_plus.transaction import Transaction as WebpayPlusTransaction
+from transbank.webpay.oneclick.mall_inscription import MallInscription
+from transbank.webpay.oneclick.mall_transaction import MallTransaction
 from transbank.common.options import WebpayOptions
 from transbank.common.integration_commerce_codes import IntegrationCommerceCodes
 from transbank.common.integration_api_keys import IntegrationApiKeys
@@ -17,140 +19,166 @@ _logger = logging.getLogger(__name__)
 class PaymentTransaction(models.Model):
     _inherit = 'payment.transaction'
 
-    def _get_transbank_tx_client(self):
-        """ Helper to get the configured Transbank Transaction client. """
+    def _get_transbank_options(self, product='webpay'):
+        """ Helper to get the configured Transbank Options for a specific product. """
         if self.provider_id.state == 'enabled':
             # Production
-            commerce_code = self.provider_id.transbank_commerce_code
-            api_key = self.provider_id.transbank_api_key
+            if product == 'oneclick':
+                commerce_code = self.provider_id.transbank_oneclick_commerce_code
+                api_key = self.provider_id.transbank_oneclick_api_key
+            else:
+                commerce_code = self.provider_id.transbank_commerce_code
+                api_key = self.provider_id.transbank_api_key
             integration_type = IntegrationType.LIVE
         else:
-            # Test / Disabled (Defaults to Integration for safety)
-            commerce_code = IntegrationCommerceCodes.WEBPAY_PLUS
+            # Test / Disabled
+            if product == 'oneclick':
+                commerce_code = IntegrationCommerceCodes.ONECLICK_MALL
+            else:
+                commerce_code = IntegrationCommerceCodes.WEBPAY_PLUS
             api_key = IntegrationApiKeys.WEBPAY
             integration_type = IntegrationType.TEST
         
-        return Transaction(WebpayOptions(commerce_code, api_key, integration_type))
+        return WebpayOptions(commerce_code, api_key, integration_type)
 
     def _get_specific_rendering_values(self, processing_values):
-        """ Create the transaction on Transbank and return the data for the redirect form. """
+        """ Create the transaction or inscription on Transbank. """
         res = super()._get_specific_rendering_values(processing_values)
         if self.provider_code != 'transbank':
             return res
 
-        # 1. Setup Transbank SDK
-        tx = self._get_transbank_tx_client()
-        
-        # 2. Prepare Data
-        buy_order = self.reference
-        session_id = self.reference
-        amount = self.amount
-        
         base_url = self.provider_id.get_base_url()
-        return_url = urls.url_join(base_url, '/payment/transbank/return')
 
-        # 3. Call Transbank API
-        try:
-            response = tx.create(
-                buy_order=buy_order,
-                session_id=session_id,
-                amount=amount,
-                return_url=return_url
-            )
-            _logger.info("Transbank: Transaction created for ref %s. Token: %s", self.reference, response.get('token'))
-        except TransbankError as e:
-            _logger.error("Transbank: Error creating transaction for ref %s: %s", self.reference, str(e))
-            raise ValidationError(_("Could not initiate the payment with Transbank. %s", e.message))
+        # CASE 1: Webpay Plus
+        if self.payment_method_code == 'webpay':
+            tx = WebpayPlusTransaction(self._get_transbank_options('webpay'))
+            return_url = urls.url_join(base_url, '/payment/transbank/return')
+            
+            try:
+                response = tx.create(
+                    buy_order=self.reference,
+                    session_id=self.reference,
+                    amount=self.amount,
+                    return_url=return_url
+                )
+                self.provider_reference = response.get('token')
+                return {
+                    'api_url': response.get('url'),
+                    'token_ws': response.get('token'),
+                    'provider_code': self.provider_code,
+                }
+            except TransbankError as e:
+                _logger.error("Transbank Webpay: Error creating transaction: %s", str(e))
+                raise ValidationError(_("Could not initiate Webpay payment. %s", e.message))
 
-        # IMPORTANT: Save the token as provider_reference so we can find the tx later
-        self.provider_reference = response.get('token')
+        # CASE 2: Oneclick Mall Inscription (Registration flow)
+        # We trigger this if the user selects Oneclick and doesn't have a token,
+        # or if it is a explicit validation operation.
+        elif self.payment_method_code == 'oneclick':
+            ins = MallInscription(self._get_transbank_options('oneclick'))
+            return_url = urls.url_join(base_url, '/payment/transbank/oneclick/confirm')
+            
+            # Username must be unique and consistent for this partner
+            username = f"odoo_user_{self.partner_id.id}"
+            email = self.partner_email or 'no-email@odoo.com'
+            
+            try:
+                _logger.info("Transbank Oneclick: Starting inscription for user %s", username)
+                response = ins.start(
+                    username=username,
+                    email=email,
+                    response_url=return_url
+                )
+                self.provider_reference = response.get('token')
+                return {
+                    'api_url': response.get('url_webpay'),
+                    'token_ws': response.get('token'),
+                    'provider_code': self.provider_code,
+                    'is_oneclick_registration': True,
+                }
+            except TransbankError as e:
+                _logger.error("Transbank Oneclick: Error starting inscription: %s", str(e))
+                raise ValidationError(_("Could not initiate Oneclick registration. %s", e.message))
 
-        rendering_values = {
-            'api_url': response.get('url'),
-            'token_ws': response.get('token'),
-            'provider_code': self.provider_code,
-        }
-        return rendering_values
+        return res
 
     @api.model
     def _search_by_reference(self, provider_code, payment_data):
-        """ Override to find the transaction by token_ws or TBK_TOKEN. """
         if provider_code != 'transbank':
             return super()._search_by_reference(provider_code, payment_data)
 
-        # 1. Look for the token in the incoming data
+        # token_ws for success, TBK_TOKEN for success(oneclick) or abort
         token = payment_data.get('token_ws') or payment_data.get('TBK_TOKEN') or payment_data.get('tbk_token')
         
         if not token:
-            _logger.warning("Transbank: No token found in notification data.")
             return self.env['payment.transaction']
 
-        # 2. Search for the transaction that has this token as provider_reference
         tx = self.search([
             ('provider_reference', '=', token),
             ('provider_code', '=', 'transbank')
         ], limit=1)
-        
-        if not tx:
-            _logger.warning("Transbank: No transaction found for token %s", token)
-        
         return tx
 
     def _extract_amount_data(self, payment_data):
-        """ Override to skip Odoo's default amount validation, as we validate via commit(). """
         if self.provider_code != 'transbank':
             return super()._extract_amount_data(payment_data)
         return None
 
     def _apply_updates(self, payment_data):
-        """ Process the transaction based on Transbank response. """
         if self.provider_code != 'transbank':
             return super()._apply_updates(payment_data)
-
-        _logger.info("Transbank: Processing updates with keys: %s", list(payment_data.keys()))
 
         token_ws = payment_data.get('token_ws')
         tbk_token = payment_data.get('TBK_TOKEN') or payment_data.get('tbk_token')
 
-        # === CASE 1: ABORT / ERROR ===
-        # If we have TBK_TOKEN and NO token_ws, it means the user clicked "Anular" or there was an error.
-        # Transbank docs: "En caso de que el tarjetahabiente haya declinado... recibirás TBK_TOKEN"
+        # 1. Handle Abort
         if tbk_token and not token_ws:
-            _logger.warning("Transbank: Transaction aborted by user or error. TBK_TOKEN: %s", tbk_token)
             self._set_canceled(state_message=_("Payment aborted by user on Transbank."))
             return
 
-        # === CASE 2: SUCCESS FLOW ===
-        if not token_ws:
-            # Should not happen if _search_by_reference worked, but safety first
-            _logger.error("Transbank: Logic error. Reached _apply_updates without token_ws.")
-            self._set_error("No Webpay Token found.")
-            return
-
-        # We must COMMIT the transaction with Transbank to get the real status.
-        tx_client = self._get_transbank_tx_client()
-        
-        try:
-            _logger.info("Transbank: Committing token %s", token_ws)
-            response = tx_client.commit(token_ws)
-            _logger.info("Transbank: Commit response:\n%s", pprint.pformat(response))
-        except TransbankError as e:
-            _logger.error("Transbank: Commit failed for token %s: %s", token_ws, str(e))
-            # If commit fails, we try to ask for status (idempotency) just in case it was already committed
+        # 2. Handle Webpay Plus Success
+        if self.payment_method_code == 'webpay':
+            tx_client = WebpayPlusTransaction(self._get_transbank_options('webpay'))
             try:
-                response = tx_client.status(token_ws)
-                _logger.info("Transbank: Recovered status:\n%s", pprint.pformat(response))
-            except Exception:
-                self._set_error(_("An error occurred while validating the transaction with Transbank."))
-                return
+                response = tx_client.commit(token_ws)
+                if response.get('response_code') == 0 and response.get('status') == 'AUTHORIZED':
+                    self._set_done()
+                else:
+                    self._set_error(_("Webpay rejected. Status: %s", response.get('status')))
+            except Exception as e:
+                self._set_error(str(e))
 
-        # Analyze status code (response_code 0 = Authorized)
-        if response.get('response_code') == 0:
-            if response.get('status') == 'AUTHORIZED':
-                self._set_done()
-            else:
-                _logger.warning("Transbank: Status is %s (not AUTHORIZED)", response.get('status'))
-                self._set_error(_("Transaction rejected by Transbank. Status: %s", response.get('status')))
-        else:
-            _logger.warning("Transbank: Rejected. Response code: %s", response.get('response_code'))
-            self._set_error(_("Transaction rejected by Transbank. Status: %s", response.get('status')))
+        # 3. Handle Oneclick Inscription Confirmation
+        elif self.payment_method_code == 'oneclick':
+            # Note: In Oneclick registration, Transbank sends TBK_TOKEN on success
+            # even if it was called via token_ws in some SDK versions, 
+            # but usually 'finish' expects the token that came back.
+            token = token_ws or tbk_token
+            ins = MallInscription(self._get_transbank_options('oneclick'))
+            try:
+                _logger.info("Transbank Oneclick: Finishing inscription for token %s", token)
+                response = ins.finish(token)
+                if response.get('response_code') == 0:
+                    self._transbank_oneclick_create_token(response)
+                    self._set_done()
+                else:
+                    self._set_error(_("Oneclick registration failed. Code: %s", response.get('response_code')))
+            except Exception as e:
+                _logger.error("Transbank Oneclick: Finish error: %s", str(e))
+                self._set_error(str(e))
+
+    def _transbank_oneclick_create_token(self, response):
+        """ Helper to create a payment.token from Oneclick response. """
+        self.ensure_one()
+        token = self.env['payment.token'].create({
+            'provider_id': self.provider_id.id,
+            'payment_method_id': self.payment_method_id.id,
+            'partner_id': self.partner_id.id,
+            'provider_ref': response.get('tbk_user'),
+            'transbank_tbk_user': response.get('tbk_user'),
+            'transbank_username': f"odoo_user_{self.partner_id.id}",
+            'transbank_card_type': response.get('card_type'),
+            'payment_details': f"**** **** **** {response.get('card_number')[-4:]}",
+        })
+        self.write({'token_id': token.id, 'tokenize': False})
+        _logger.info("Transbank Oneclick: Token created for partner %s", self.partner_id.name)
