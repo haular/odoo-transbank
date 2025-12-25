@@ -9,13 +9,13 @@ class PaymentProvider(models.Model):
     transbank_commerce_code = fields.Char(
         string='Commerce Code',
         required_if_provider='transbank',
-        help=_('The commerce code provided by Transbank')
+        help='The commerce code provided by Transbank'
     )
     transbank_api_key = fields.Char(
         string='API Key',
         required_if_provider='transbank',
         groups='base.group_system',
-        help=_('The API Key provided by Transbank')
+        help='The API Key provided by Transbank'
     )
 
     def _get_supported_currencies(self):

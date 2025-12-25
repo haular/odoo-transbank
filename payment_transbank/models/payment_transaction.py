@@ -153,4 +153,4 @@ class PaymentTransaction(models.Model):
                 self._set_error(_("Transaction rejected by Transbank. Status: %s", response.get('status')))
         else:
             _logger.warning("Transbank: Rejected. Response code: %s", response.get('response_code'))
-            self._set_error(_("Transaction rejected by Transbank."))
+            self._set_error(_("Transaction rejected by Transbank. Status: %s", response.get('status')))
