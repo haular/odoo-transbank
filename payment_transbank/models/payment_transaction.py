@@ -2,7 +2,7 @@ import logging
 import pprint
 from werkzeug import urls
 
-from odoo import _, api, models
+from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
 from transbank.error.transbank_error import TransbankError
@@ -14,10 +14,37 @@ from transbank.common.integration_commerce_codes import IntegrationCommerceCodes
 from transbank.common.integration_api_keys import IntegrationApiKeys
 from transbank.common.integration_type import IntegrationType
 
+from .. import const
+
 _logger = logging.getLogger(__name__)
 
 class PaymentTransaction(models.Model):
     _inherit = 'payment.transaction'
+
+    # Transbank specific fields for auditing and reconciliation
+    transbank_payment_type_code = fields.Selection(
+        selection=[(k, v) for k, v in const.PAYMENT_TYPE_CODES.items()],
+        string="Transbank Payment Type",
+        readonly=True
+    )
+    transbank_response_code = fields.Integer(
+        string="Transbank Response Code",
+        readonly=True,
+        help="0: Approved, Negative values: Rejection reasons"
+    )
+    transbank_status = fields.Selection(
+        selection=[(k, v) for k, v in const.TRANSBANK_STATUSES.items()],
+        string="Transbank Status",
+        readonly=True
+    )
+    transbank_authorization_code = fields.Char(
+        string="Authorization Code",
+        readonly=True
+    )
+    transbank_card_number = fields.Char(
+        string="Card Last Digits",
+        readonly=True
+    )
 
     def _get_transbank_options(self, product='webpay'):
         """ Helper to get the configured Transbank Options for a specific product. """
@@ -72,13 +99,10 @@ class PaymentTransaction(models.Model):
                 raise ValidationError(_("Could not initiate Webpay payment. %s", e.message))
 
         # CASE 2: Oneclick Mall Inscription (Registration flow)
-        # We trigger this if the user selects Oneclick and doesn't have a token,
-        # or if it is a explicit validation operation.
         elif self.payment_method_code == 'oneclick':
             ins = MallInscription(self._get_transbank_options('oneclick'))
             return_url = urls.url_join(base_url, '/payment/transbank/oneclick/confirm')
             
-            # Username must be unique and consistent for this partner
             username = f"odoo_user_{self.partner_id.id}"
             email = self.partner_email or 'no-email@odoo.com'
             
@@ -91,7 +115,7 @@ class PaymentTransaction(models.Model):
                 )
                 self.provider_reference = response.get('token')
                 return {
-                    'api_url': response.get('url_webpay'),
+                    'api_url': response.get('url'),
                     'token_ws': response.get('token'),
                     'provider_code': self.provider_code,
                     'is_oneclick_registration': True,
@@ -107,7 +131,6 @@ class PaymentTransaction(models.Model):
         if provider_code != 'transbank':
             return super()._search_by_reference(provider_code, payment_data)
 
-        # token_ws for success, TBK_TOKEN for success(oneclick) or abort
         token = payment_data.get('token_ws') or payment_data.get('TBK_TOKEN') or payment_data.get('tbk_token')
         
         if not token:
@@ -131,33 +154,50 @@ class PaymentTransaction(models.Model):
         token_ws = payment_data.get('token_ws')
         tbk_token = payment_data.get('TBK_TOKEN') or payment_data.get('tbk_token')
 
-        # 1. Handle Abort
+        # 1. Handle Abort by User
         if tbk_token and not token_ws:
+            self.transbank_status = 'FAILED'
             self._set_canceled(state_message=_("Payment aborted by user on Transbank."))
             return
 
-        # 2. Handle Webpay Plus Success
+        # 2. Handle Webpay Plus Response
         if self.payment_method_code == 'webpay':
             tx_client = WebpayPlusTransaction(self._get_transbank_options('webpay'))
             try:
                 response = tx_client.commit(token_ws)
+                
+                # Save Transbank Data
+                self.write({
+                    'transbank_response_code': response.get('response_code'),
+                    'transbank_payment_type_code': response.get('payment_type_code'),
+                    'transbank_authorization_code': response.get('authorization_code'),
+                    'transbank_status': response.get('status'),
+                    'transbank_card_number': response.get('card_detail', {}).get('card_number'),
+                })
+
+                # Process Status
                 if response.get('response_code') == 0 and response.get('status') == 'AUTHORIZED':
                     self._set_done()
+                elif response.get('status') in ['REVERSED', 'NULLIFIED']:
+                    self._set_canceled()
                 else:
-                    self._set_error(_("Webpay rejected. Status: %s", response.get('status')))
+                    error_msg = const.RESPONSE_CODES.get(
+                        response.get('response_code'), 
+                        _("Transaction rejected by Transbank. Status: %s", response.get('status'))
+                    )
+                    self._set_error(error_msg)
+
             except Exception as e:
                 self._set_error(str(e))
 
         # 3. Handle Oneclick Inscription Confirmation
         elif self.payment_method_code == 'oneclick':
-            # Note: In Oneclick registration, Transbank sends TBK_TOKEN on success
-            # even if it was called via token_ws in some SDK versions, 
-            # but usually 'finish' expects the token that came back.
             token = token_ws or tbk_token
             ins = MallInscription(self._get_transbank_options('oneclick'))
             try:
-                _logger.info("Transbank Oneclick: Finishing inscription for token %s", token)
                 response = ins.finish(token)
+                self.transbank_response_code = response.get('response_code')
+                
                 if response.get('response_code') == 0:
                     self._transbank_oneclick_create_token(response)
                     self._set_done()

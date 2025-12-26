@@ -11,9 +11,9 @@
     },
     'data': [
         'data/payment_method_data.xml',
-        'views/payment_transbank_templates.xml',
-        'data/payment_provider_data.xml',
         'views/payment_provider_views.xml',
+        'views/payment_transaction_views.xml',
+        'views/payment_transbank_templates.xml',
     ],
     'post_init_hook': 'post_init_hook',
     'uninstall_hook': 'uninstall_hook',

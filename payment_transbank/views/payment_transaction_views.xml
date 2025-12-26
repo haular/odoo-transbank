@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="payment_transaction_form" model="ir.ui.view">
+        <field name="name">payment.transaction.form.transbank</field>
+        <field name="model">payment.transaction</field>
+        <field name="inherit_id" ref="payment.payment_transaction_form"/>
+        <field name="arch" type="xml">
+            <field name="provider_reference" position="after">
+                <field name="transbank_payment_type_code" readonly="1" invisible="provider_code != 'transbank'"/>
+                <field name="transbank_status" readonly="1" invisible="provider_code != 'transbank'"/>
+                <field name="transbank_response_code" readonly="1" invisible="provider_code != 'transbank'"/>
+                <field name="transbank_authorization_code" readonly="1" invisible="provider_code != 'transbank'"/>
+                <field name="transbank_card_number" readonly="1" invisible="provider_code != 'transbank'"/>
+            </field>
+        </field>
+    </record>
+</odoo>
