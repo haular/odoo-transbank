@@ -6,6 +6,7 @@ from odoo.http import request
 
 _logger = logging.getLogger(__name__)
 
+
 class TransbankController(http.Controller):
     _return_url = '/payment/transbank/return'
     _oneclick_confirm_url = '/payment/transbank/oneclick/confirm'
@@ -15,7 +16,7 @@ class TransbankController(http.Controller):
         """ Webpay Plus return point. """
         _logger.info("Transbank: entering form_feedback with data:\n%s", pprint.pformat(data))
         token = data.get('token_ws') or data.get('TBK_TOKEN') or data.get('tbk_token')
-        
+
         if not token:
             _logger.warning('Transbank: Received return without token.')
             return request.redirect('/payment/status')
@@ -28,7 +29,7 @@ class TransbankController(http.Controller):
         """ Oneclick Mall inscription confirmation point. """
         _logger.info("Transbank Oneclick: entering confirmation with data:\n%s", pprint.pformat(data))
         token = data.get('token_ws') or data.get('TBK_TOKEN') or data.get('tbk_token')
-        
+
         if not token:
             _logger.warning('Transbank Oneclick: Received confirmation without token.')
             return request.redirect('/payment/status')

@@ -1,12 +1,13 @@
 from odoo import fields, models
 
+
 class PaymentProvider(models.Model):
     _inherit = 'payment.provider'
 
     code = fields.Selection(
         selection_add=[('transbank', 'Transbank')], ondelete={'transbank': 'set default'}
     )
-    
+
     # Webpay Plus Credentials
     transbank_commerce_code = fields.Char(
         string='Webpay Commerce Code',

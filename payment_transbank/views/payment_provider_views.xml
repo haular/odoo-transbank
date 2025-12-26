@@ -9,19 +9,27 @@
                 <group invisible="code != 'transbank'">
                     <separator string="Webpay Plus Credentials" colspan="2"/>
                     <field name="transbank_commerce_code" required="code == 'transbank' and state == 'enabled'"/>
-                    <field name="transbank_api_key" password="True" required="code == 'transbank' and state == 'enabled'"/>
-                    
+                    <field name="transbank_api_key" password="True"
+                           required="code == 'transbank' and state == 'enabled'"/>
+
                     <separator string="Oneclick Mall Credentials" colspan="2"/>
-                    <field name="transbank_oneclick_commerce_code" required="code == 'transbank' and state == 'enabled'"/>
-                    <field name="transbank_oneclick_api_key" password="True" required="code == 'transbank' and state == 'enabled'"/>
-                    
+                    <field name="transbank_oneclick_commerce_code"
+                           required="code == 'transbank' and state == 'enabled'"/>
+                    <field name="transbank_oneclick_api_key" password="True"
+                           required="code == 'transbank' and state == 'enabled'"/>
+
                     <div colspan="2" class="alert alert-info" invisible="state != 'test'" role="status">
                         <strong>Credentials are not required when Test Mode is active.</strong>
                         <br/>
-                        The SDK already includes test environment credentials, which will be used automatically while this mode is selected.
-                        <br/><br/>
-                        Furthermore, when you access the Transbank website and need to enter a test card, you can use the cards available at the following link:
-                        <a href="https://transbankdevelopers.cl/documentacion/como_empezar#tarjetas-de-prueba" target="_blank">Transbank Test Cards</a>
+                        The SDK already includes test environment credentials, which will be used automatically while
+                        this mode is selected.
+                        <br/>
+                        <br/>
+                        Furthermore, when you access the Transbank website and need to enter a test card, you can use
+                        the cards available at the following link:
+                        <a href="https://transbankdevelopers.cl/documentacion/como_empezar#tarjetas-de-prueba"
+                           target="_blank">Transbank Test Cards
+                        </a>
                     </div>
                 </group>
             </xpath>
