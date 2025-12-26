@@ -9,6 +9,5 @@
         'data/payment_method_data.xml',
         'data/payment_provider_data.xml',
     ],
-    'post_init_hook': 'post_init_hook',
     'license': 'LGPL-3',
 }
