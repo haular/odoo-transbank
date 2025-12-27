@@ -20,12 +20,16 @@ class PaymentTransaction(models.Model):
 
         options = self.provider_id._get_transbank_options('webpay')
         tx = WebpayPlusTransaction(options)
-
-        base_url = self.provider_id.get_base_url()
-        return_url = urls.url_join(base_url, '/payment/transbank/return')
+        return_url = urls.url_join(self.provider_id.get_base_url(), '/payment/transbank/return')
+        amount = self.amount if self.state == 'enabled' else round(self.amount)
 
         try:
-            response = tx.create(self.reference, self.reference, self.amount, return_url)
+            response = tx.create(
+                buy_order=self.reference,
+                session_id=self.reference,
+                amount=amount,
+                return_url=return_url
+            )
             self.provider_reference = response.get('token')
             return {
                 'api_url': response.get('url'),

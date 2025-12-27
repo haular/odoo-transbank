@@ -41,3 +41,11 @@ class PaymentProvider(models.Model):
         if self.code == 'transbank':
             return ['webpay', 'oneclick']
         return default_codes
+
+    def _get_transbank_options(self, method_code):
+        """ Template method to be overridden by sub-modules (webpay, oneclick).
+        :param str method_code: The code of the payment method ('webpay' or 'oneclick')
+        :return: An instance of transbank.common.options.WebpayOptions or None for test mode.
+        """
+        self.ensure_one()
+        return None

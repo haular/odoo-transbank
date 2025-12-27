@@ -25,10 +25,14 @@
                         this mode is selected.
                         <br/>
                         <br/>
-                        Furthermore, when you access the Transbank website and need to enter a test card, you can use
-                        the cards available at the following link:
+                        Furthermore, when you access the Transbank website and need to enter a test card and merchant code, you can use
+                        the cards available at the following link:<br/>
                         <a href="https://transbankdevelopers.cl/documentacion/como_empezar#tarjetas-de-prueba"
                            target="_blank">Transbank Test Cards
+                        </a>
+                        <br/>
+                        <a href="https://www.transbankdevelopers.cl/documentacion/como_empezar#codigos-de-comercio"
+                           target="_blank">Transbank Merchant code
                         </a>
                     </div>
                 </group>
