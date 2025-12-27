@@ -15,16 +15,17 @@ class PaymentTransaction(models.Model):
 
     def _get_specific_rendering_values(self, processing_values):
         res = super()._get_specific_rendering_values(processing_values)
+
         if self.provider_code != 'transbank' or self.payment_method_code != 'webpay':
             return res
 
         options = self.provider_id._get_transbank_options('webpay')
-        tx = WebpayPlusTransaction(options)
+        webpay_transaction = WebpayPlusTransaction(options)
         return_url = urls.url_join(self.provider_id.get_base_url(), '/payment/transbank/return')
         amount = self.amount if self.state == 'enabled' else round(self.amount)
 
         try:
-            response = tx.create(
+            response = webpay_transaction.create(
                 buy_order=self.reference,
                 session_id=self.reference,
                 amount=amount,
@@ -45,6 +46,8 @@ class PaymentTransaction(models.Model):
         if provider_code != 'transbank':
             return super()._search_by_reference(provider_code, payment_data)
 
+        # Store the token regardless of its status (error, accepted, or rejected)
+        # as it's required to query the transaction status
         token = payment_data.get('token_ws') or payment_data.get('TBK_TOKEN') or payment_data.get('tbk_token')
         if not token:
             return self.env['payment.transaction']
@@ -58,15 +61,15 @@ class PaymentTransaction(models.Model):
         if self.provider_code != 'transbank' or self.payment_method_code != 'webpay':
             return super()._apply_updates(payment_data)
 
-        token_ws = payment_data.get('token_ws')
-        if not token_ws:
+        token = payment_data.get('token_ws')
+        if not token:
             return super()._apply_updates(payment_data)
 
         options = self.provider_id._get_transbank_options('webpay')
-        tx_client = WebpayPlusTransaction(options)
+        webpay_transaction = WebpayPlusTransaction(options)
 
         try:
-            response = tx_client.commit(token_ws)
+            response = webpay_transaction.commit(token)
             # Save technical data
             self.write({
                 'transbank_response_code': response.get('response_code'),
