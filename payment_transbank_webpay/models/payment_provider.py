@@ -24,4 +24,4 @@ class PaymentProvider(models.Model):
         integration_type = IntegrationType.TEST
         if self.state == 'enabled':
             integration_type = IntegrationType.LIVE
-        return WebpayOptions(self.transbank_commerce_code, self.transbank_api_key, integration_type)
+        return WebpayOptions(self.transbank_webpay_commerce_code, self.transbank_webpay_api_key, integration_type)

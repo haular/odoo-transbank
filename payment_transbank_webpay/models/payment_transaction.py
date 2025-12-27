@@ -46,16 +46,8 @@ class PaymentTransaction(models.Model):
         if provider_code != 'transbank':
             return super()._search_by_reference(provider_code, payment_data)
 
-        # Store the token regardless of its status (error, accepted, or rejected)
-        # as it's required to query the transaction status
-        token = payment_data.get('token_ws') or payment_data.get('TBK_TOKEN') or payment_data.get('tbk_token')
-        if not token:
-            return self.env['payment.transaction']
-
-        return self.search([
-            ('provider_reference', '=', token),
-            ('provider_code', '=', 'transbank')
-        ], limit=1)
+        token = payment_data.get('token_ws') or payment_data.get('TBK_TOKEN') or payment_data.get('tbk_token') or 'no_token'
+        return self.search([('provider_reference', '=', token), ('provider_code', '=', 'transbank')], limit=1)
 
     def _apply_updates(self, payment_data):
         if self.provider_code != 'transbank' or self.payment_method_code != 'webpay':
@@ -69,15 +61,14 @@ class PaymentTransaction(models.Model):
         webpay_transaction = WebpayPlusTransaction(options)
 
         try:
+            # Confirm the transaction once the authorization has been completed on the Webpay portal.
             response = webpay_transaction.commit(token)
-            # Save technical data
             self.write({
                 'transbank_response_code': response.get('response_code'),
                 'transbank_status': response.get('status'),
                 'transbank_authorization_code': response.get('authorization_code'),
                 'transbank_card_number': response.get('card_detail', {}).get('card_number'),
             })
-
             if response.get('response_code') == 0 and response.get('status') == 'AUTHORIZED':
                 self._set_done()
             else:
