@@ -5,7 +5,7 @@
     'author': 'Héctor Aular <aular.hector.dev@gmail.com>',
     'sequence': 350,
     'summary': 'A Chilean payment provider covering Webpay Plus and Oneclick.',
-    'depends': ['payment', 'portal'],
+    'depends': ['payment'],
     'external_dependencies': {
         'python': ['transbank-sdk'],
     },

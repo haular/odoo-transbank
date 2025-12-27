@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="payment_provider_view_form_webpay" model="ir.ui.view">
+        <field name="name">payment.provider.form.webpay</field>
+        <field name="model">payment.provider</field>
+        <field name="inherit_id" ref="payment_transbank.payment_provider_view_form_transbank"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@invisible='code != \'transbank\'']" position="inside">
+                <group invisible="code != 'transbank' or state == 'test'">
+                    <separator string="Webpay Plus Credentials" colspan="2"/>
+                    <field name="transbank_webpay_commerce_code" required="code == 'transbank' and state == 'enabled'"/>
+                    <field name="transbank_webpay_api_key" password="True" required="code == 'transbank' and state == 'enabled'"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="redirect_form" inherit_id="payment_transbank.redirect_form">
+        <xpath expr="//form" position="inside">
+            <t t-if="provider_code == 'transbank' and not is_oneclick_registration">
+                <input type="hidden" name="token_ws" t-att-value="token_ws"/>
+            </t>
+        </xpath>
+    </template>
+</odoo>

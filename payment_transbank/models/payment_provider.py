@@ -8,28 +8,6 @@ class PaymentProvider(models.Model):
         selection_add=[('transbank', 'Transbank')], ondelete={'transbank': 'set default'}
     )
 
-    # Webpay Plus Credentials
-    transbank_commerce_code = fields.Char(
-        string='Webpay Commerce Code',
-        help='The commerce code provided by Transbank for Webpay Plus'
-    )
-    transbank_api_key = fields.Char(
-        string='Webpay API Key',
-        groups='base.group_system',
-        help='The API Key provided by Transbank for Webpay Plus'
-    )
-
-    # Oneclick Mall Credentials
-    transbank_oneclick_commerce_code = fields.Char(
-        string='Oneclick Commerce Code',
-        help='The commerce code provided by Transbank for Oneclick Mall'
-    )
-    transbank_oneclick_api_key = fields.Char(
-        string='Oneclick API Key',
-        groups='base.group_system',
-        help='The API Key provided by Transbank for Oneclick Mall'
-    )
-
     def _get_supported_currencies(self):
         supported_currencies = super()._get_supported_currencies()
         if self.code == 'transbank':
@@ -45,7 +23,7 @@ class PaymentProvider(models.Model):
     def _get_transbank_options(self, method_code):
         """ Template method to be overridden by sub-modules (webpay, oneclick).
         :param str method_code: The code of the payment method ('webpay' or 'oneclick')
-        :return: An instance of transbank.common.options.WebpayOptions or None for test mode.
+        :return: An instance of transbank.common.options.WebpayOptions
         """
         self.ensure_one()
         return None

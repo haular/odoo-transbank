@@ -1,5 +1,4 @@
 from odoo.addons.payment import setup_provider, reset_payment_provider
-from . import controllers
 from . import models
 
 

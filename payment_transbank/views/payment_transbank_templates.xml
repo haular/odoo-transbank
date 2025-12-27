@@ -2,17 +2,7 @@
 <odoo>
     <template id="redirect_form">
         <form t-att-action="api_url" method="POST" t-attf-id="o_payment_redirect_form_{{provider_code}}">
-            <!-- 
-                Webpay Plus uses 'token_ws'.
-                Oneclick Inscription uses 'TBK_TOKEN'.
-                We include both to be compatible with both flows.
-            -->
-            <t t-if="is_oneclick_registration">
-                <input type="hidden" name="TBK_TOKEN" t-att-value="token_ws"/>
-            </t>
-            <t t-else="">
-                <input type="hidden" name="token_ws" t-att-value="token_ws"/>
-            </t>
+            <!-- Specific inputs will be injected by sub-modules -->
         </form>
     </template>
 </odoo>

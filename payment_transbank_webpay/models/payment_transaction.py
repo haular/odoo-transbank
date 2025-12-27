@@ -4,7 +4,7 @@ from transbank.error.transbank_error import TransbankError
 from transbank.webpay.webpay_plus.transaction import Transaction as WebpayPlusTransaction
 from werkzeug import urls
 
-from odoo import _, models
+from odoo import _, models, api
 from odoo.exceptions import ValidationError
 
 _logger = logging.getLogger(__name__)
@@ -39,6 +39,20 @@ class PaymentTransaction(models.Model):
         except TransbankError as e:
             _logger.error("Webpay Plus: Error creating transaction: %s", str(e))
             raise ValidationError(_("Could not initiate Webpay payment."))
+
+    @api.model
+    def _search_by_reference(self, provider_code, payment_data):
+        if provider_code != 'transbank':
+            return super()._search_by_reference(provider_code, payment_data)
+
+        token = payment_data.get('token_ws') or payment_data.get('TBK_TOKEN') or payment_data.get('tbk_token')
+        if not token:
+            return self.env['payment.transaction']
+
+        return self.search([
+            ('provider_reference', '=', token),
+            ('provider_code', '=', 'transbank')
+        ], limit=1)
 
     def _apply_updates(self, payment_data):
         if self.provider_code != 'transbank' or self.payment_method_code != 'webpay':
