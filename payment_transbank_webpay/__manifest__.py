@@ -1,8 +1,8 @@
 {
     'name': 'Transbank Webpay Plus',
-    'version': '1.0.0',
+    'version': '19.0.1.0.0',
     'category': 'Accounting/Payment Providers',
-    'author': 'Héctor Aular <aular.hector.dev@gmail.com>',
+    'author': 'Héctor Aular',
     'summary': 'Adds Webpay Plus payment method to Transbank provider.',
     'depends': ['payment_transbank'],
     'data': [

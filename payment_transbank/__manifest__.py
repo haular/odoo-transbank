@@ -1,10 +1,10 @@
 {
     'name': 'Payment Provider: Transbank',
-    'version': '1.0.0',
+    'version': '19.0.1.0.0',
     'category': 'Accounting/Payment Providers',
-    'author': 'Héctor Aular <aular.hector.dev@gmail.com>',
+    'author': 'Héctor Aular',
     'sequence': 350,
-    'summary': 'A Chilean payment provider covering Webpay Plus and Oneclick.',
+    'summary': 'A Chilean payment provider covering Webpay Plus.',
     'depends': ['payment'],
     'external_dependencies': {
         'python': ['transbank-sdk'],
