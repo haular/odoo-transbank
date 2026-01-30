@@ -4,7 +4,7 @@ from transbank.error.transbank_error import TransbankError
 from transbank.webpay.webpay_plus.transaction import Transaction as WebpayPlusTransaction
 from werkzeug import urls
 
-from odoo import _, models, api
+from odoo import _, api, models
 from odoo.exceptions import ValidationError
 
 _logger = logging.getLogger(__name__)
@@ -26,10 +26,7 @@ class PaymentTransaction(models.Model):
 
         try:
             response = webpay_transaction.create(
-                buy_order=self.reference,
-                session_id=self.reference,
-                amount=amount,
-                return_url=return_url
+                buy_order=self.reference, session_id=self.reference, amount=amount, return_url=return_url
             )
             self.provider_reference = response.get('token')
             return {
@@ -38,8 +35,8 @@ class PaymentTransaction(models.Model):
                 'provider_code': self.provider_code,
             }
         except TransbankError as e:
-            _logger.error("Webpay Plus: Error creating transaction: %s", str(e))
-            raise ValidationError(_("Could not initiate Webpay payment."))
+            _logger.error('Webpay Plus: Error creating transaction: %s', str(e))
+            raise ValidationError(_('Could not initiate Webpay payment.'))
 
     @api.model
     def _search_by_reference(self, provider_code, payment_data):
@@ -63,15 +60,17 @@ class PaymentTransaction(models.Model):
         try:
             # Confirm the transaction once the authorization has been completed on the Webpay portal.
             response = webpay_transaction.commit(token)
-            self.write({
-                'transbank_response_code': response.get('response_code'),
-                'transbank_status': response.get('status'),
-                'transbank_authorization_code': response.get('authorization_code'),
-                'transbank_card_number': response.get('card_detail', {}).get('card_number'),
-            })
+            self.write(
+                {
+                    'transbank_response_code': response.get('response_code'),
+                    'transbank_status': response.get('status'),
+                    'transbank_authorization_code': response.get('authorization_code'),
+                    'transbank_card_number': response.get('card_detail', {}).get('card_number'),
+                }
+            )
             if response.get('response_code') == 0 and response.get('status') == 'AUTHORIZED':
                 self._set_done()
             else:
-                self._set_error(_("Webpay rejected the payment."))
+                self._set_error(_('Webpay rejected the payment.'))
         except Exception as e:
             self._set_error(str(e))

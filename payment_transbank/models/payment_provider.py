@@ -4,9 +4,7 @@ from odoo import fields, models
 class PaymentProvider(models.Model):
     _inherit = 'payment.provider'
 
-    code = fields.Selection(
-        selection_add=[('transbank', 'Transbank')], ondelete={'transbank': 'set default'}
-    )
+    code = fields.Selection(selection_add=[('transbank', 'Transbank')], ondelete={'transbank': 'set default'})
 
     def _get_supported_currencies(self):
         supported_currencies = super()._get_supported_currencies()
@@ -21,9 +19,9 @@ class PaymentProvider(models.Model):
         return default_codes
 
     def _get_transbank_options(self, method_code):
-        """ Template method to be overridden by sub-modules (webpay, oneclick).
+        """Template method to be overridden by sub-modules (webpay, oneclick).
         :param str method_code: The code of the payment method ('webpay' or 'oneclick')
         :return: An instance of transbank.common.options.WebpayOptions
         """
         self.ensure_one()
-        return None
+        return
