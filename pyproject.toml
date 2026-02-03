@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "odoo-workspace"
+version = "0.1"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["ruff", "pre-commit"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 126
+fix = true
+
+[tool.ruff.lint]
+extend-select = ["F", "B", "C90", "E501", "I", "UP", "SIM", "RET", "RUF"]
+extend-safe-fixes = ["UP008"]
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "I001"]
+"__manifest__.py" = ["B018"]
+
+[tool.ruff.lint.isort]
+section-order = ["future", "standard-library", "third-party", "odoo", "odoo-addons", "first-party", "local-folder"]
+
+[tool.ruff.lint.isort.sections]
+"odoo" = ["odoo"]
+"odoo-addons" = ["odoo.addons"]

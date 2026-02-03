@@ -1,88 +1,98 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-/.venv
-/.pytest_cache
-/.ruff_cache
-
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
+# ==========================================
+# Virtual Environments and Managers (UV, Node, Python)
+# ==========================================
+node_modules/
+.venv/
 env/
+venv/
+ENV/
 bin/
+lib/
+lib64/
+.uv/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+uv.lock
+
+# ==========================================
+# Build and Distribution
+# ==========================================
 build/
-develop-eggs/
 dist/
 eggs/
-lib64/
+*.egg-info/
+*.egg
+*.eggs
 parts/
 sdist/
 var/
-*.egg-info/
 .installed.cfg
-*.egg
-*.eggs
+*.so
+__pycache__/
+*.py[cod]
+.Python
+develop-eggs/
 
-# Windows installers
-*.msi
-
-# Debian packages
-*.deb
-
-# Redhat packages
-*.rpm
-
-# MacOS packages
-*.dmg
-*.pkg
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
+# ==========================================
+# Development Tools and Linting
+# ==========================================
+.pytest_cache/
+.ruff_cache/
 .tox/
 .coverage
 .cache
+htmlcov/
 nosetests.xml
 coverage.xml
+.mypy_cache/
+.pyre/
+.ropeproject/
 
-# Translations
-*.mo
-
-# Pycharm
-.idea
-
-# Eclipse
-.settings
-
-# Visual Studio cache/options directory
+# ==========================================
+# IDE and Editor Settings
+# ==========================================
+.idea/
+.vscode/
 .vs/
-.vscode
-
-# OSX Files
-.DS_Store
-
-# Django stuff:
-*.log
-
-# Mr Developer
-.mr.developer.cfg
+*.swp
+*~
 .project
 .pydevproject
+.settings/
 
-# Rope
-.ropeproject
+# ==========================================
+# Logs and Temporary Files
+# ==========================================
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Sphinx documentation
+# ==========================================
+# Installers and OS Packages
+# ==========================================
+*.msi
+*.deb
+*.rpm
+*.dmg
+*.pkg
+.DS_Store
+Thumbs.db
+
+# ==========================================
+# Secrets and Documentation
+# ==========================================
+.env
+.env.*
+!.env.example
 docs/_build/
+*.mo
 
-# Backup files
-*~
-*.swp
-
-# OCA rules
+# ==========================================
+# Miscellaneous (Specific Rules)
+# ==========================================
+.mr.developer.cfg
 !static/lib/
