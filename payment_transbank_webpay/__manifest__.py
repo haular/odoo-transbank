@@ -1,6 +1,6 @@
 {
     'name': 'Transbank Webpay Plus',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'category': 'Accounting/Payment Providers',
     'author': 'Héctor Aular',
     'summary': 'Adds Webpay Plus payment method to Transbank provider.',
@@ -11,5 +11,6 @@
         'views/payment_provider_views.xml',
         'views/payment_transbank_templates.xml',
     ],
+    'images': ['static/description/cover.png'],
     'license': 'LGPL-3',
 }

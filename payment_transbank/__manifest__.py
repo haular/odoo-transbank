@@ -1,6 +1,6 @@
 {
     'name': 'Payment Provider: Transbank',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'category': 'Accounting/Payment Providers',
     'author': 'Héctor Aular',
     'sequence': 350,
@@ -15,6 +15,7 @@
         'views/payment_provider_views.xml',
         'views/payment_transaction_views.xml',
     ],
+    'images': ['static/description/cover.png'],
     'post_init_hook': 'post_init_hook',
     'uninstall_hook': 'uninstall_hook',
     'license': 'LGPL-3',
