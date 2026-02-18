@@ -8,7 +8,8 @@
             <xpath expr="//group[@name='transbank_credentials_group']" position="inside">
                 <separator string="Webpay Plus Credentials" colspan="2"/>
                 <field name="transbank_webpay_commerce_code" required="code == 'transbank' and state == 'enabled'"/>
-                <field name="transbank_webpay_api_key" password="True" required="code == 'transbank' and state == 'enabled'"/>
+                <field name="transbank_webpay_api_key" password="True"
+                       required="code == 'transbank' and state == 'enabled'"/>
             </xpath>
         </field>
     </record>

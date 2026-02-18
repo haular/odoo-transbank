@@ -4,7 +4,7 @@ from transbank.error.transbank_error import TransbankError
 from transbank.webpay.webpay_plus.transaction import Transaction as WebpayPlusTransaction
 from werkzeug import urls
 
-from odoo import _, api, models
+from odoo import _, models
 from odoo.exceptions import ValidationError
 
 _logger = logging.getLogger(__name__)
@@ -21,8 +21,8 @@ class PaymentTransaction(models.Model):
 
         options = self.provider_id._get_transbank_options('webpay')
         webpay_transaction = WebpayPlusTransaction(options)
-        return_url = urls.url_join(self.provider_id.get_base_url(), '/payment/transbank/return')
-        amount = self.amount if self.state == 'enabled' else round(self.amount)
+        return_url = urls.url_join(self.provider_id.get_base_url(), f'/payment/transbank/return?reference={self.reference}')
+        amount = self.amount if self.provider_id.state == 'enabled' else round(self.amount)
 
         try:
             response = webpay_transaction.create(
@@ -38,28 +38,18 @@ class PaymentTransaction(models.Model):
             _logger.error('Webpay Plus: Error creating transaction: %s', str(e))
             raise ValidationError(_('Could not initiate Webpay payment.'))
 
-    @api.model
-    def _search_by_reference(self, provider_code, payment_data):
-        if provider_code != 'transbank':
-            return super()._search_by_reference(provider_code, payment_data)
-
-        token = payment_data.get('token_ws') or payment_data.get('TBK_TOKEN') or payment_data.get('tbk_token') or 'no_token'
-        return self.search([('provider_reference', '=', token), ('provider_code', '=', 'transbank')], limit=1)
-
     def _apply_updates(self, payment_data):
         if self.provider_code != 'transbank' or self.payment_method_code != 'webpay':
             return super()._apply_updates(payment_data)
 
-        token = payment_data.get('token_ws')
-        if not token:
-            return super()._apply_updates(payment_data)
+        token_ws = self.provider_reference  # Already validated in the controller
 
         options = self.provider_id._get_transbank_options('webpay')
         webpay_transaction = WebpayPlusTransaction(options)
 
         try:
             # Confirm the transaction once the authorization has been completed on the Webpay portal.
-            response = webpay_transaction.commit(token)
+            response = webpay_transaction.commit(token_ws)
             self.write(
                 {
                     'transbank_response_code': response.get('response_code'),
