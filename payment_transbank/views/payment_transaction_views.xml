@@ -5,13 +5,19 @@
         <field name="model">payment.transaction</field>
         <field name="inherit_id" ref="payment.payment_transaction_form"/>
         <field name="arch" type="xml">
-            <field name="provider_reference" position="after">
-                <field name="transbank_payment_type_code" readonly="1" invisible="provider_code != 'transbank'"/>
-                <field name="transbank_status" readonly="1" invisible="provider_code != 'transbank'"/>
-                <field name="transbank_response_code" readonly="1" invisible="provider_code != 'transbank'"/>
-                <field name="transbank_authorization_code" readonly="1" invisible="provider_code != 'transbank'"/>
-                <field name="transbank_card_number" readonly="1" invisible="provider_code != 'transbank'"/>
-            </field>
+            <xpath expr="//group[@name='transaction_details']/.." position="after">
+                <group name="transbank_details" string="Transbank Details" invisible="provider_code != 'transbank'">
+                    <group>
+                        <field name="transbank_payment_type_code" readonly="1" invisible="provider_code != 'transbank'"/>
+                        <field name="transbank_authorization_code" readonly="1" invisible="provider_code != 'transbank'"/>
+                        <field name="transbank_status" readonly="1" invisible="provider_code != 'transbank'"/>
+                    </group>
+                    <group>
+                        <field name="transbank_card_number" readonly="1" invisible="provider_code != 'transbank'"/>
+                        <field name="transbank_response_code" readonly="1" invisible="provider_code != 'transbank'"/>
+                    </group>
+                </group>
+            </xpath>
         </field>
     </record>
 </odoo>
