@@ -10,6 +10,12 @@ dependencies = []
 [project.optional-dependencies]
 dev = ["ruff", "pre-commit"]
 
+[tool.setuptools]
+packages = [
+    "payment_transbank",
+    "payment_transbank_webpay",
+]
+
 [tool.ruff]
 target-version = "py312"
 line-length = 126
