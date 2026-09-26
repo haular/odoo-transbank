@@ -9,14 +9,9 @@ class PaymentProvider(models.Model):
     def _get_supported_currencies(self):
         supported_currencies = super()._get_supported_currencies()
         if self.code == 'transbank':
-            supported_currencies = supported_currencies.filtered(lambda c: c.name in ('CLP', 'USD'))
+            # USD needs a commerce code contracted for dollars; amounts are sent as CLP integers.
+            supported_currencies = supported_currencies.filtered(lambda c: c.name == 'CLP')
         return supported_currencies
-
-    def _get_default_payment_method_codes(self):
-        default_codes = super()._get_default_payment_method_codes()
-        if self.code == 'transbank':
-            return ['webpay', 'oneclick']
-        return default_codes
 
     def _get_transbank_options(self, method_code):
         """Template method to be overridden by sub-modules (webpay, oneclick).
@@ -24,4 +19,3 @@ class PaymentProvider(models.Model):
         :return: An instance of transbank.common.options.WebpayOptions
         """
         self.ensure_one()
-        return

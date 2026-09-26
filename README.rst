@@ -55,11 +55,26 @@ Para configurar el proveedor de pagos:
 
 1.  Navegue a **Contabilidad** > **Configuración** > **Proveedores de Pago**.
 2.  Seleccione **Transbank**.
-3.  Establezca el estado en **Prueba (Test)** o **Habilitado (Producción)**.
+3.  Active **Live** para operar en producción; desactivado, los pagos van al ambiente de
+    integración de Transbank.
 4.  Ingrese las credenciales proporcionadas por Transbank:
 
     * **Código de Comercio (Commerce Code)**
     * **API Key**
+
+    En modo prueba, si se dejan vacías se usan las credenciales públicas de integración.
+
+Migración desde 19.0
+====================
+
+Al actualizar una base de 19.0 a 20.0:
+
+* El script ``payment_transbank/migrations/20.0.1.0.0/post-migrate.py`` deja el proveedor
+  Transbank solo con **CLP**, la única moneda soportada. Si se quita otra moneda (por ejemplo
+  USD), el log lo indica con un ``WARNING``.
+* Haga el upgrade **fuera del horario de ventas**. Un pago que esté en el formulario de
+  Webpay justo durante la actualización y termine por tiempo agotado (*timeout*) quedará
+  en borrador: 20.0 valida ese retorno con un secreto que 19.0 no enviaba.
 
 Uso
 ===
