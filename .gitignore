@@ -101,3 +101,5 @@ docs/_build/
 # Claude Code / odoo-workflow (configuración local)
 # ==========================================
 .claude/odoo.json
+.claude/skills/
+odoo.conf
