@@ -96,3 +96,8 @@ docs/_build/
 # ==========================================
 .mr.developer.cfg
 !static/lib/
+
+# ==========================================
+# Claude Code / odoo-workflow (configuración local)
+# ==========================================
+.claude/odoo.json
